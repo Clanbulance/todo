@@ -1,4 +1,4 @@
-console.log("ver3")
+console.log("ver4.1")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -16,26 +16,32 @@ let selectedProject = null;
 // Function to redirect to login page only if the user is not already there
 
 // Remove token from URL fragment after login
-if (window.location.hash.includes('access_token')) {
-  const params = new URLSearchParams(window.location.hash.substring(1));
-  const access_token = params.get('access_token');
-  const refresh_token = params.get('refresh_token');
+async function handleRedirect() {
+  if (window.location.hash.includes('access_token')) {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
 
-  if (access_token && refresh_token) {
-    console.log('Access token received:', access_token);
-    
-    // 👉 Set the session manually
-    await supabase.auth.setSession({
-      access_token,
-      refresh_token
-    });
+    if (access_token && refresh_token) {
+      console.log('Access token received:', access_token);
+      
+      await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
 
-    console.log('Session set manually.');
+      console.log('Session set manually.');
+    }
+
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 
-  // Clean the URL by removing the access_token fragment
-  window.history.replaceState({}, document.title, window.location.pathname);
+  checkSession();
 }
+
+// Call it immediately
+handleRedirect();
+
 
 // ✅ Always check session after page load
 checkSession();
