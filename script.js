@@ -1,4 +1,4 @@
-console.log("ver5")
+console.log("ver5.1")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -104,6 +104,7 @@ async function loadProjects() {
   }
 
   projects = data || [];
+  console.log("projects loading twice?")
   renderProjects();
 }
 
