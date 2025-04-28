@@ -1,4 +1,4 @@
-console.log("ver6.5")
+console.log("ver6.6")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -258,7 +258,7 @@ function openInputModal(title, defaultValue, onSubmit) {
   modal.innerHTML = `
     <div class="custom-modal-content">
       <h2>${title}</h2>
-      <input type="text" placeholder="Type here..." value="${defaultValue || ''}" autofocus />
+     <input type="text" name="projectName" placeholder="Type here..." value="${defaultValue || ''}" autofocus />
       <div class="modal-buttons">
         <button class="save-btn">Save</button>
         <button class="cancel-btn">Cancel</button>
@@ -286,8 +286,8 @@ function openTaskModal(oldName, oldDueDate, onSubmit) {
   modal.innerHTML = `
     <div class="custom-modal-content">
       <h2>Edit Task</h2>
-      <input type="text" placeholder="Task name..." value="${oldName || ''}" autofocus />
-      <input type="date" value="${oldDueDate || ''}" />
+      <input type="text" name="taskName" placeholder="Task name..." value="${oldName || ''}" autofocus />
+      <input type="date" name="dueDate" value="${oldDueDate || ''}" />
       <div class="modal-buttons">
         <button class="save-btn">Save</button>
         <button class="cancel-btn">Cancel</button>
