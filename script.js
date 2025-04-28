@@ -15,59 +15,36 @@ let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
-// Redirect to login page if no session is found
-function redirectToLoginPage() {
-  window.location.href = 'https://clanbulance.github.io/todo'; // Redirect to the login page (or home page)
-}
-
-
 // --- Session Check ---
 checkSession();
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getSession();
-  console.log('Supabase session data:', data); // Log session data to the console
-  console.log('Supabase session error:', error); // Log any error if it occurs
-
-  if (data?.session) {
+  if (data.session) {
     currentUser = data.session.user;
-    console.log('User is logged in:', currentUser);
     startApp();
-  } else {
-    console.log('User is not logged in');
-    redirectToLoginPage();
   }
 }
-
 
 // --- Login with Google ---
 document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
 
 async function loginWithGoogle() {
-  console.log('Logging in with Google...');
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://clanbulance.github.io/todo' // Log this redirect URL
+      redirectTo: 'https://clanbulance.github.io/todo' // Important for GitHub Pages
     }
   });
-
-  if (error) {
-    console.error('Google Login Error:', error.message);
-  } else {
-    console.log('Login request sent successfully');
-  }
+  if (error) console.error('Google Login Error:', error.message);
 }
-
 
 // --- Start Application ---
 function startApp() {
-  console.log('Starting the app for user:', currentUser); // Log user info when starting the app
   document.getElementById('authPage').style.display = 'none';
   document.getElementById('mainApp').style.display = 'grid';
-  loadProjects(); // This will load your projects once the app starts
+  loadProjects();
 }
-
 
 // --- Load Projects ---
 async function loadProjects() {
