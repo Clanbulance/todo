@@ -1,4 +1,4 @@
-console.log("ver5.2")
+console.log("ver5.3")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -35,7 +35,6 @@ async function handleRedirect() {
 
     window.history.replaceState({}, document.title, window.location.pathname);
   }
-
   checkSession();
 }
 
@@ -44,7 +43,7 @@ handleRedirect();
 
 
 // ✅ Always check session after page load
-checkSession();
+
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getUser();
@@ -483,5 +482,5 @@ window.startSparkles = function() {
   animate();
 };
 
-startSparkles();
-checkSession();
+handleRedirect();  // only this
+startSparkles();   // and sparkles
