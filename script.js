@@ -1,4 +1,18 @@
 // Initialize Supabase connection
+// Clean up Supabase OAuth hash from URL after login
+if (window.location.hash.includes('access_token')) {
+  const params = new URLSearchParams(window.location.hash.substring(1));
+  const access_token = params.get('access_token');
+
+  if (access_token) {
+    // Supabase client will already process it, no need to store manually
+
+    // Clean the URL (remove the ugly #access_token part)
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
+
 
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
