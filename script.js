@@ -1,4 +1,4 @@
-console.log("ver6.1")
+console.log("ver6.2")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -260,32 +260,34 @@ function renderTasks(tasks) {
 }
 
 // --- MODALS ---
-function openInputModal(title, placeholder, onSubmit) {
+function openEditProjectModal(oldName, onSubmit) {
   const modal = document.createElement('div');
   modal.className = 'custom-modal';
   modal.innerHTML = `
     <div class="custom-modal-content">
-      <h2>${title}</h2>
-      <input type="text" id="modalInput" placeholder="${placeholder}" autofocus />
+      <h2>Edit Project</h2>
+      <input type="text" id="editProjectNameInput" placeholder="Project name..." value="${oldName}" />
       <div class="modal-buttons">
-        <button id="saveBtn">Save</button>
-        <button id="cancelBtn">Cancel</button>
+        <button id="saveEditBtn">Save Changes</button>
+        <button id="cancelEditBtn">Cancel</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
-  document.getElementById('saveBtn').addEventListener('click', () => {
-    const value = document.getElementById('modalInput').value.trim();
-    if (value) {
-      onSubmit(value);
+  document.getElementById('saveEditBtn').addEventListener('click', () => {
+    const input = document.getElementById('editProjectNameInput').value.trim();
+    if (input) {
+      onSubmit(input);
       document.body.removeChild(modal);
     }
   });
-  document.getElementById('cancelBtn').addEventListener('click', () => {
+
+  document.getElementById('cancelEditBtn').addEventListener('click', () => {
     document.body.removeChild(modal);
   });
 }
+
 
 function openTaskModal(onSubmit) {
   const modal = document.createElement('div');
@@ -324,7 +326,7 @@ function openEditTaskModal(oldName, oldDueDate, onSubmit) {
 
 function openEditProjectModal(oldName, onSubmit) {
   openInputModal('Edit Project', 'Project Name...', (name) => onSubmit(name));
-  document.getElementById('modalInput').value = oldName;
+  document.getElementById('projectNameInput').value = oldName;
 }
 
 function openProjectPopup() {
