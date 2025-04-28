@@ -1,4 +1,4 @@
-console.log("ver6")
+console.log("ver6.1")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -326,6 +326,15 @@ function openEditProjectModal(oldName, onSubmit) {
   openInputModal('Edit Project', 'Project Name...', (name) => onSubmit(name));
   document.getElementById('modalInput').value = oldName;
 }
+
+function openProjectPopup() {
+  openInputModal('New Project', 'Enter Project Name...', async (projectName) => {
+    if (projectName) {
+      await createProject(projectName);
+    }
+  });
+}
+
 
 // --- SPARKLES ---
 window.startSparkles = function () {
