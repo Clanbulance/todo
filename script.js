@@ -5,7 +5,6 @@ if (window.location.hash.includes('access_token')) {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
-
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -17,27 +16,6 @@ let selectedProject = null;
 
 // Redirect to login page if no session found
 
-// --- Session Check ---
-checkSession();
-
-async function checkSession() {
-  const { data, error } = await supabase.auth.getSession();
-  console.log('Supabase session data:', data);
-  console.log('Supabase session error:', error);
-
-  // If there is a session, start the app
-  if (data?.session) {
-    currentUser = data.session.user;
-    console.log('User is logged in:', currentUser);
-    startApp();  // Start the app if the session is valid
-  } else {
-    console.log('No session found, checking current page...');
-    // If not logged in and we're not already on the login page, redirect to login
-    if (!window.location.href.includes('index.html')) {
-      redirectToLoginPage();
-    }
-  }
-}
 
 // Function to redirect to login page only if the user is not already there
 function redirectToLoginPage() {
