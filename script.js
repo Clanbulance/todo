@@ -1,12 +1,7 @@
-console.log("ver1")
+console.log("ver2")
 
 // --- Clean URL if redirected from Supabase OAuth ---
-if (window.location.hash.includes('access_token')) {
-  const params = new URLSearchParams(window.location.hash.substring(1));
-  if (params.get('access_token')) {
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-}
+
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -18,29 +13,7 @@ let selectedProject = null;
 
 // Redirect to login page if no session found
 
-
 // Function to redirect to login page only if the user is not already there
-function redirectToLoginPage() {
-  console.log('Redirecting to login page...');
-  // Only redirect if we're not already on the login page
-  if (window.location.pathname !== '/index.html') {
-    window.location.href = 'https://clanbulance.github.io/todo';  // Adjust the URL as needed
-  }
-}
-
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event);
-  console.log('Session data after login:', session);
-  
-  if (session) {
-    currentUser = session.user;
-    console.log('User is logged in:', currentUser);
-    startApp();
-  } else {
-    console.log('User is logged out');
-    redirectToLoginPage();
-  }
-});
 
 // Remove token from URL fragment after login
 if (window.location.hash.includes('access_token')) {
