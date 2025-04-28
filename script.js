@@ -15,6 +15,12 @@ let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
+// Redirect to login page if no session is found
+function redirectToLoginPage() {
+  window.location.href = 'https://clanbulance.github.io/todo'; // Redirect to the login page (or home page)
+}
+
+
 // --- Session Check ---
 checkSession();
 
