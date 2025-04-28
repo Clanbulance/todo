@@ -20,11 +20,19 @@ checkSession();
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getSession();
-  if (data.session) {
+  console.log('Supabase session data:', data); // Log session data to the console
+  console.log('Supabase session error:', error); // Log any error if it occurs
+
+  if (data?.session) {
     currentUser = data.session.user;
+    console.log('User is logged in:', currentUser);
     startApp();
+  } else {
+    console.log('User is not logged in');
+    redirectToLoginPage();
   }
 }
+
 
 // --- Login with Google ---
 document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
