@@ -1,4 +1,4 @@
-console.log("ver5.1")
+console.log("ver5.2")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -7,7 +7,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 
-let currentUser = null;
+let currentUser = null; 
 let projects = [];
 let selectedProject = null;
 
@@ -128,6 +128,19 @@ async function renderProjects() {
   addProjectBtn.addEventListener('click', openProjectPopup);
   left.appendChild(addProjectBtn);
 
+  // 👉 Fetch all open tasks ONCE for all projects
+  const { data: openTasksData } = await supabase
+    .from('tasks')
+    .select('id, project_id')
+    .eq('is_finished', false);
+
+  // Group tasks by project_id
+  const openTasksCount = {};
+  (openTasksData || []).forEach(task => {
+    openTasksCount[task.project_id] = (openTasksCount[task.project_id] || 0) + 1;
+  });
+
+  // Render each project
   for (const project of projects) {
     const div = document.createElement('div');
     div.className = 'project';
@@ -135,18 +148,11 @@ async function renderProjects() {
       div.classList.add('active');
     }
 
-    // Fetch how many open tasks
-    const { data: tasks } = await supabase
-      .from('tasks')
-      .select('id')
-      .eq('project_id', project.id)
-      .eq('is_finished', false);
-
-    const openTasks = tasks?.length || 0;
+    const openCount = openTasksCount[project.id] || 0;
 
     div.innerHTML = `
       ${project.name}
-      <span class="task-count">${openTasks}</span>
+      <span class="task-count">${openCount}</span>
       <br>
       <button onclick="editProject('${project.id}', '${project.name}')" class="small-btn">✏️</button>
       <button onclick="deleteProject('${project.id}')" class="small-btn" style="background-color:#ef4444;">🗑️</button>
@@ -160,14 +166,16 @@ async function renderProjects() {
     left.appendChild(div);
   }
 
+  // 🛠 Now append logout button once
   const logoutBtn = document.createElement('button');
-  logoutBtn.textContent = 'Logout';
   logoutBtn.className = 'add-project-btn';
   logoutBtn.style.backgroundColor = '#ef4444';
   logoutBtn.style.marginTop = '20px';
+  logoutBtn.textContent = 'Logout';
   logoutBtn.addEventListener('click', logoutUser);
   left.appendChild(logoutBtn);
 }
+
 
 // --- Open Project Popup ---
 function openProjectPopup() {
