@@ -19,16 +19,26 @@ let selectedProject = null;
 if (window.location.hash.includes('access_token')) {
   const params = new URLSearchParams(window.location.hash.substring(1));
   const access_token = params.get('access_token');
-  
-  if (access_token) {
+  const refresh_token = params.get('refresh_token');
+
+  if (access_token && refresh_token) {
     console.log('Access token received:', access_token);
-    // Optionally, store the access token if needed
+    
+    // 👉 Set the session manually
+    await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    console.log('Session set manually.');
   }
 
   // Clean the URL by removing the access_token fragment
   window.history.replaceState({}, document.title, window.location.pathname);
-  checkSession(); 
 }
+
+// ✅ Always check session after page load
+checkSession();
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getUser();
