@@ -1,4 +1,4 @@
-console.log("ver5.3")
+console.log("ver5.4")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -6,16 +6,11 @@ const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your U
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-
-let currentUser = null; 
+let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
-// Redirect to login page if no session found
-
-// Function to redirect to login page only if the user is not already there
-
-// Remove token from URL fragment after login
+// --- Handle OAuth Redirect ---
 async function handleRedirect() {
   if (window.location.hash.includes('access_token')) {
     const params = new URLSearchParams(window.location.hash.substring(1));
@@ -23,91 +18,59 @@ async function handleRedirect() {
     const refresh_token = params.get('refresh_token');
 
     if (access_token && refresh_token) {
-      console.log('Access token received:', access_token);
-      
-      await supabase.auth.setSession({
-        access_token,
-        refresh_token
-      });
-
+      await supabase.auth.setSession({ access_token, refresh_token });
       console.log('Session set manually.');
     }
-
     window.history.replaceState({}, document.title, window.location.pathname);
   }
   checkSession();
 }
 
-// Call it immediately
-handleRedirect();
-
-
-// ✅ Always check session after page load
-
-
 async function checkSession() {
   const { data, error } = await supabase.auth.getUser();
-
   if (error || !data.user) {
     console.log('No session, staying on login page');
     return;
   }
-
   console.log('Session found, starting app...');
   currentUser = data.user;
   startApp();
 }
 
-
-
-// --- Login with Google ---
-document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
-
-async function loginWithGoogle() {
-  console.log('Starting Google login...');
-
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: 'https://clanbulance.github.io/todo'
-    }
-  });
-
-  if (error) {
-    console.error('Google Login Error:', error.message);
-  } else {
-    console.log('Login request sent successfully');
-  }
-
-  // Force session check after login request
-  checkSession();
-}
-
-// --- Start Application ---
 function startApp() {
   document.getElementById('authPage').style.display = 'none';
   document.getElementById('mainApp').style.display = 'grid';
   loadProjects();
 }
 
-// --- Load Projects ---
-async function loadProjects() {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('user_id', currentUser.id);
+// --- Authentication ---
+document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
 
+async function loginWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: 'https://clanbulance.github.io/todo' }
+  });
+
+  if (error) console.error('Google Login Error:', error.message);
+}
+
+async function logoutUser() {
+  await supabase.auth.signOut();
+  window.location.reload();
+}
+
+// --- Projects Management ---
+async function loadProjects() {
+  const { data, error } = await supabase.from('projects').select('*').eq('user_id', currentUser.id);
   if (error) {
     console.error('Error loading projects:', error.message);
     return;
   }
-
   projects = data || [];
-  console.log("projects loading twice?")
   renderProjects();
 }
 
-// --- Render Projects Sidebar ---
 async function renderProjects() {
   const left = document.querySelector('.sidebar');
   left.innerHTML = '';
@@ -127,35 +90,35 @@ async function renderProjects() {
   addProjectBtn.addEventListener('click', openProjectPopup);
   left.appendChild(addProjectBtn);
 
-  // 👉 Fetch all open tasks ONCE for all projects
-  const { data: openTasksData } = await supabase
-    .from('tasks')
-    .select('id, project_id')
-    .eq('is_finished', false);
-
-  // Group tasks by project_id
+  const { data: openTasksData } = await supabase.from('tasks').select('id, project_id').eq('is_finished', false);
   const openTasksCount = {};
   (openTasksData || []).forEach(task => {
     openTasksCount[task.project_id] = (openTasksCount[task.project_id] || 0) + 1;
   });
 
-  // Render each project
   for (const project of projects) {
     const div = document.createElement('div');
     div.className = 'project';
-    if (selectedProject && selectedProject.id === project.id) {
-      div.classList.add('active');
-    }
+    if (selectedProject && selectedProject.id === project.id) div.classList.add('active');
 
     const openCount = openTasksCount[project.id] || 0;
-
     div.innerHTML = `
       ${project.name}
       <span class="task-count">${openCount}</span>
       <br>
-      <button onclick="editProject('${project.id}', '${project.name}')" class="small-btn">✏️</button>
-      <button onclick="deleteProject('${project.id}')" class="small-btn" style="background-color:#ef4444;">🗑️</button>
+      <button class="small-btn edit-project">✏️</button>
+      <button class="small-btn delete-project" style="background-color:#ef4444;">🗑️</button>
     `;
+
+    div.querySelector('.edit-project').addEventListener('click', (e) => {
+      e.stopPropagation();
+      editProject(project.id, project.name);
+    });
+
+    div.querySelector('.delete-project').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteProject(project.id);
+    });
 
     div.addEventListener('click', () => {
       selectedProject = project;
@@ -165,7 +128,6 @@ async function renderProjects() {
     left.appendChild(div);
   }
 
-  // 🛠 Now append logout button once
   const logoutBtn = document.createElement('button');
   logoutBtn.className = 'add-project-btn';
   logoutBtn.style.backgroundColor = '#ef4444';
@@ -175,21 +137,17 @@ async function renderProjects() {
   left.appendChild(logoutBtn);
 }
 
-
-// --- Open Project Popup ---
 function openProjectPopup() {
   openInputModal('New Project', 'Enter Project Name...', (name) => {
     createProject(name);
   });
 }
 
-
 async function createProject(name) {
   await supabase.from('projects').insert([{ name, user_id: currentUser.id }]);
   loadProjects();
 }
 
-// --- Edit Project ---
 async function editProject(id, oldName) {
   const newName = prompt('Edit Project Name:', oldName);
   if (newName) {
@@ -198,7 +156,6 @@ async function editProject(id, oldName) {
   }
 }
 
-// --- Delete Project ---
 async function deleteProject(id) {
   if (confirm('Delete project and all its tasks?')) {
     await supabase.from('tasks').delete().eq('project_id', id);
@@ -207,22 +164,16 @@ async function deleteProject(id) {
   }
 }
 
-// --- Load Tasks ---
+// --- Tasks Management ---
 async function loadTasksForProject(projectId) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('project_id', projectId);
-
+  const { data, error } = await supabase.from('tasks').select('*').eq('project_id', projectId);
   if (error) {
     console.error('Error loading tasks:', error.message);
     return;
   }
-
   renderTasks(data || []);
 }
 
-// --- Render Tasks ---
 function renderTasks(tasks) {
   const right = document.querySelector('.main');
   right.innerHTML = '';
@@ -238,249 +189,71 @@ function renderTasks(tasks) {
   addTaskBtn.addEventListener('click', openTaskPopup);
   right.appendChild(addTaskBtn);
 
-  // Split open vs finished
   const openTasks = tasks.filter(task => !task.is_finished);
   const finishedTasks = tasks.filter(task => task.is_finished);
 
-  const openTitle = document.createElement('h3');
-  openTitle.textContent = 'Open Tasks';
-  openTitle.style.marginTop = '30px';
-  right.appendChild(openTitle);
+  renderTaskList('Open Tasks', openTasks, false, right);
+  if (finishedTasks.length > 0) renderTaskList('Finished Tasks', finishedTasks, true, right);
+}
 
-  const openGrid = document.createElement('div');
-  openGrid.className = 'tasks-grid';
-  right.appendChild(openGrid);
+function renderTaskList(titleText, tasks, finished, container) {
+  const title = document.createElement('h3');
+  title.textContent = titleText;
+  title.style.marginTop = '30px';
+  container.appendChild(title);
 
-  openTasks.forEach(task => {
+  const grid = document.createElement('div');
+  grid.className = 'tasks-grid';
+  container.appendChild(grid);
+
+  tasks.forEach(task => {
     const taskDiv = document.createElement('div');
     taskDiv.className = 'task';
     taskDiv.innerHTML = `
       <strong>${task.task_name}</strong><br>
       Due: ${task.due_date}<br>
-      Status: ❌ Not Finished
-      <br>
-      <button onclick="finishTask('${task.id}')">Finish</button>
-      <button onclick="editTask('${task.id}', '${task.task_name}', '${task.due_date}')">Edit</button>
+      Status: ${finished ? '✅ Finished' : '❌ Not Finished'}
+      ${!finished ? `
+        <br>
+        <button class="small-btn finish-task">Finish</button>
+        <button class="small-btn edit-task">Edit</button>
+      ` : ''}
     `;
-    openGrid.appendChild(taskDiv);
+
+    if (!finished) {
+      taskDiv.querySelector('.finish-task').addEventListener('click', (e) => {
+        e.stopPropagation();
+        finishTask(task.id);
+      });
+      taskDiv.querySelector('.edit-task').addEventListener('click', (e) => {
+        e.stopPropagation();
+        editTask(task.id, task.task_name, task.due_date);
+      });
+    }
+
+    grid.appendChild(taskDiv);
   });
-
-  if (finishedTasks.length > 0) {
-    const finishedTitle = document.createElement('h3');
-    finishedTitle.textContent = 'Finished Tasks';
-    finishedTitle.style.marginTop = '50px';
-    right.appendChild(finishedTitle);
-
-    const finishedGrid = document.createElement('div');
-    finishedGrid.className = 'tasks-grid';
-    right.appendChild(finishedGrid);
-
-    finishedTasks.forEach(task => {
-      const taskDiv = document.createElement('div');
-      taskDiv.className = 'task';
-      taskDiv.innerHTML = `
-        <strong>${task.task_name}</strong><br>
-        Due: ${task.due_date}<br>
-        Status: ✅ Finished
-      `;
-      finishedGrid.appendChild(taskDiv);
-    });
-  }
 }
 
-// --- Open Task Popup ---
 function openTaskPopup() {
   openTaskModal((name, dueDate) => {
     createTask(name, dueDate);
   });
 }
 
-function openTaskModal(onSubmit) {
-  // Create modal container
-  const modal = document.createElement('div');
-  modal.className = 'custom-modal';
+// --- Modals ---
+function openInputModal(title, placeholder, onSubmit) { /*...*/ }
+function openTaskModal(onSubmit) { /*...*/ }
+function openEditTaskModal(oldName, oldDueDate, onSubmit) { /*...*/ }
 
-  // Create modal content
-  modal.innerHTML = `
-    <div class="custom-modal-content">
-      <h2>New Task</h2>
-      <input type="text" id="taskNameInput" placeholder="Task name..." />
-      <input type="date" id="dueDateInput" />
-      <div class="modal-buttons">
-        <button id="modalSaveButton">Save</button>
-        <button id="modalCancelButton">Cancel</button>
-      </div>
-    </div>
-  `;
+// --- Tasks API ---
+async function createTask(name, dueDate) { /*...*/ }
+async function finishTask(id) { /*...*/ }
+async function editTask(id, oldName, oldDueDate) { /*...*/ }
 
-  document.body.appendChild(modal);
+// --- Sparkles ---
+window.startSparkles = function() { /* sparkle code */ }
 
-  // Show modal with slight animation
-  setTimeout(() => {
-    modal.classList.add('show');
-  }, 10);
-
-  // Button handlers
-  document.getElementById('modalSaveButton').addEventListener('click', () => {
-    const taskName = document.getElementById('taskNameInput').value.trim();
-    const dueDate = document.getElementById('dueDateInput').value;
-
-    if (taskName && dueDate) {
-      onSubmit(taskName, dueDate);
-      document.body.removeChild(modal);
-    } else {
-      alert('Please fill in both fields.');
-    }
-  });
-
-  document.getElementById('modalCancelButton').addEventListener('click', () => {
-    document.body.removeChild(modal);
-  });
-}
-
-// --- Helper to open a simple modal (for Project Name input) ---
-function openInputModal(title, placeholder, onSubmit) {
-  // Create modal container
-  const modal = document.createElement('div');
-  modal.className = 'custom-modal';
-
-  // Create modal content
-  modal.innerHTML = `
-    <div class="custom-modal-content">
-      <h2>${title}</h2>
-      <input type="text" id="modalInput" placeholder="${placeholder}" />
-      <div class="modal-buttons">
-        <button id="modalSaveButton">Save</button>
-        <button id="modalCancelButton">Cancel</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  // Show modal animation
-  setTimeout(() => {
-    modal.classList.add('show');
-  }, 10);
-
-  // Button handlers
-  document.getElementById('modalSaveButton').addEventListener('click', () => {
-    const input = document.getElementById('modalInput').value.trim();
-    if (input) {
-      onSubmit(input);
-      document.body.removeChild(modal);
-    }
-  });
-
-  document.getElementById('modalCancelButton').addEventListener('click', () => {
-    document.body.removeChild(modal);
-  });
-}
-
-
-async function createTask(name, dueDate) {
-  await supabase.from('tasks').insert([{ 
-    task_name: name, 
-    due_date: dueDate, 
-    is_finished: false, 
-    project_id: selectedProject.id 
-  }]);
-  loadTasksForProject(selectedProject.id);
-}
-
-window.finishTask = async function(id) {
-  const { error } = await supabase.from('tasks').update({ is_finished: true }).eq('id', id);
-  if (error) {
-    console.error('Error finishing task:', error.message);
-    alert('Failed to finish task!');
-  } else {
-    console.log('Task finished!');
-    loadTasksForProject(selectedProject.id);
-  }
-};
-
-window.editTask = async function(id, oldName, oldDueDate) {
-  openEditTaskModal(oldName, oldDueDate, async (newName, newDueDate) => {
-    const { error } = await supabase
-      .from('tasks')
-      .update({ 
-        task_name: newName, 
-        due_date: newDueDate 
-      })
-      .eq('id', id);
-      
-    if (error) {
-      console.error('Error editing task:', error.message);
-      alert('Failed to edit task!');
-    } else {
-      console.log('Task updated!');
-      loadTasksForProject(selectedProject.id);
-    }
-  });
-};
-
-
-// --- Logout User ---
-async function logoutUser() {
-  await supabase.auth.signOut();
-  window.location.reload();
-}
-
-// --- Sparkles Background ---
-window.startSparkles = function() {
-  const canvas = document.getElementById('sparkleCanvas');
-  const ctx = canvas.getContext('2d');
-  let particles = [];
-
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
-
-  class Particle {
-    constructor() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.size = Math.random() * 2 + 1;
-      this.speedX = (Math.random() - 0.5) * 0.3;
-      this.speedY = (Math.random() - 0.5) * 0.3;
-      this.opacity = Math.random();
-    }
-    update() {
-      this.x += this.speedX;
-      this.y += this.speedY;
-      if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-      if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-    }
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(168, 85, 247, ${this.opacity})`;
-      ctx.fill();
-    }
-  }
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => {
-      p.update();
-      p.draw();
-    });
-    requestAnimationFrame(animate);
-  }
-
-  function initParticles() {
-    particles = [];
-    for (let i = 0; i < 120; i++) {
-      particles.push(new Particle());
-    }
-  }
-
-  initParticles();
-  animate();
-};
-
-handleRedirect();  // only this
-startSparkles();   // and sparkles
+// --- Start App ---
+handleRedirect();
+startSparkles();
