@@ -1,4 +1,4 @@
-console.log("ver5.4")
+console.log("ver6")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -6,11 +6,12 @@ const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your U
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+
 let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
-// --- Handle OAuth Redirect ---
+// --- AUTH ---
 async function handleRedirect() {
   if (window.location.hash.includes('access_token')) {
     const params = new URLSearchParams(window.location.hash.substring(1));
@@ -18,8 +19,8 @@ async function handleRedirect() {
     const refresh_token = params.get('refresh_token');
 
     if (access_token && refresh_token) {
+      console.log('Access token received');
       await supabase.auth.setSession({ access_token, refresh_token });
-      console.log('Session set manually.');
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   }
@@ -37,22 +38,14 @@ async function checkSession() {
   startApp();
 }
 
-function startApp() {
-  document.getElementById('authPage').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'grid';
-  loadProjects();
-}
-
-// --- Authentication ---
-document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
-
 async function loginWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: 'https://clanbulance.github.io/todo' }
   });
-
-  if (error) console.error('Google Login Error:', error.message);
+  if (error) {
+    console.error('Login error:', error.message);
+  }
 }
 
 async function logoutUser() {
@@ -60,11 +53,69 @@ async function logoutUser() {
   window.location.reload();
 }
 
-// --- Projects Management ---
+document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
+
+// --- APP START ---
+function startApp() {
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'grid';
+  loadProjects();
+}
+
+// --- PROJECTS API ---
+async function createProject(name) {
+  const { error } = await supabase.from('projects').insert([{ name, user_id: currentUser.id }]);
+  if (error) {
+    console.error('Create Project Error:', error.message);
+    alert('Failed to create project!');
+  } else {
+    loadProjects();
+  }
+}
+
+async function editProject(id, oldName) {
+  openEditProjectModal(oldName, async (newName) => {
+    const { error } = await supabase.from('projects').update({ name: newName }).eq('id', id);
+    if (error) {
+      console.error('Edit Project Error:', error.message);
+      alert('Failed to edit project!');
+    } else {
+      loadProjects();
+    }
+  });
+}
+
+async function deleteProject(id) {
+  if (confirm('Delete this project and all its tasks?')) {
+    await supabase.from('tasks').delete().eq('project_id', id);
+    await supabase.from('projects').delete().eq('id', id);
+    loadProjects();
+  }
+}
+
+// --- TASKS API ---
+async function createTask(name, dueDate) {
+  await supabase.from('tasks').insert([{ task_name: name, due_date: dueDate, is_finished: false, project_id: selectedProject.id }]);
+  loadTasksForProject(selectedProject.id);
+}
+
+async function finishTask(id) {
+  await supabase.from('tasks').update({ is_finished: true }).eq('id', id);
+  loadTasksForProject(selectedProject.id);
+}
+
+async function editTask(id, oldName, oldDueDate) {
+  openEditTaskModal(oldName, oldDueDate, async (newName, newDueDate) => {
+    await supabase.from('tasks').update({ task_name: newName, due_date: newDueDate }).eq('id', id);
+    loadTasksForProject(selectedProject.id);
+  });
+}
+
+// --- RENDERING ---
 async function loadProjects() {
   const { data, error } = await supabase.from('projects').select('*').eq('user_id', currentUser.id);
   if (error) {
-    console.error('Error loading projects:', error.message);
+    console.error('Load Projects Error:', error.message);
     return;
   }
   projects = data || [];
@@ -72,23 +123,23 @@ async function loadProjects() {
 }
 
 async function renderProjects() {
-  const left = document.querySelector('.sidebar');
-  left.innerHTML = '';
+  const sidebar = document.querySelector('.sidebar');
+  sidebar.innerHTML = '';
 
   const profilePic = document.createElement('img');
   profilePic.src = currentUser.user_metadata?.avatar_url || 'https://via.placeholder.com/100';
-  left.appendChild(profilePic);
+  sidebar.appendChild(profilePic);
 
   const username = document.createElement('div');
   username.className = 'username';
   username.textContent = currentUser.user_metadata?.full_name || currentUser.email;
-  left.appendChild(username);
+  sidebar.appendChild(username);
 
   const addProjectBtn = document.createElement('button');
   addProjectBtn.className = 'add-project-btn';
   addProjectBtn.textContent = '+ Add Project';
   addProjectBtn.addEventListener('click', openProjectPopup);
-  left.appendChild(addProjectBtn);
+  sidebar.appendChild(addProjectBtn);
 
   const { data: openTasksData } = await supabase.from('tasks').select('id, project_id').eq('is_finished', false);
   const openTasksCount = {};
@@ -96,164 +147,240 @@ async function renderProjects() {
     openTasksCount[task.project_id] = (openTasksCount[task.project_id] || 0) + 1;
   });
 
-  for (const project of projects) {
+  projects.forEach(project => {
     const div = document.createElement('div');
     div.className = 'project';
-    if (selectedProject && selectedProject.id === project.id) div.classList.add('active');
+    if (selectedProject && selectedProject.id === project.id) {
+      div.classList.add('active');
+    }
 
-    const openCount = openTasksCount[project.id] || 0;
     div.innerHTML = `
       ${project.name}
-      <span class="task-count">${openCount}</span>
-      <br>
-      <button class="small-btn edit-project">✏️</button>
-      <button class="small-btn delete-project" style="background-color:#ef4444;">🗑️</button>
+      <span class="task-count">${openTasksCount[project.id] || 0}</span>
+      <div class="small-btns">
+        <button class="edit-btn">✏️</button>
+        <button class="delete-btn">🗑️</button>
+      </div>
     `;
 
-    div.querySelector('.edit-project').addEventListener('click', (e) => {
-      e.stopPropagation();
-      editProject(project.id, project.name);
+    div.addEventListener('click', (e) => {
+      if (e.target.classList.contains('edit-btn')) {
+        e.stopPropagation();
+        editProject(project.id, project.name);
+      } else if (e.target.classList.contains('delete-btn')) {
+        e.stopPropagation();
+        deleteProject(project.id);
+      } else {
+        selectedProject = project;
+        loadTasksForProject(project.id);
+      }
     });
 
-    div.querySelector('.delete-project').addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteProject(project.id);
-    });
-
-    div.addEventListener('click', () => {
-      selectedProject = project;
-      loadTasksForProject(project.id);
-    });
-
-    left.appendChild(div);
-  }
+    sidebar.appendChild(div);
+  });
 
   const logoutBtn = document.createElement('button');
   logoutBtn.className = 'add-project-btn';
   logoutBtn.style.backgroundColor = '#ef4444';
-  logoutBtn.style.marginTop = '20px';
   logoutBtn.textContent = 'Logout';
   logoutBtn.addEventListener('click', logoutUser);
-  left.appendChild(logoutBtn);
+  sidebar.appendChild(logoutBtn);
 }
 
-function openProjectPopup() {
-  openInputModal('New Project', 'Enter Project Name...', (name) => {
-    createProject(name);
-  });
-}
-
-async function createProject(name) {
-  await supabase.from('projects').insert([{ name, user_id: currentUser.id }]);
-  loadProjects();
-}
-
-async function editProject(id, oldName) {
-  const newName = prompt('Edit Project Name:', oldName);
-  if (newName) {
-    await supabase.from('projects').update({ name: newName }).eq('id', id);
-    loadProjects();
-  }
-}
-
-async function deleteProject(id) {
-  if (confirm('Delete project and all its tasks?')) {
-    await supabase.from('tasks').delete().eq('project_id', id);
-    await supabase.from('projects').delete().eq('id', id);
-    loadProjects();
-  }
-}
-
-// --- Tasks Management ---
 async function loadTasksForProject(projectId) {
   const { data, error } = await supabase.from('tasks').select('*').eq('project_id', projectId);
   if (error) {
-    console.error('Error loading tasks:', error.message);
+    console.error('Load Tasks Error:', error.message);
     return;
   }
   renderTasks(data || []);
 }
 
 function renderTasks(tasks) {
-  const right = document.querySelector('.main');
-  right.innerHTML = '';
+  const main = document.querySelector('.main');
+  main.innerHTML = '';
 
   const title = document.createElement('h2');
   title.textContent = selectedProject.name;
-  right.appendChild(title);
+  main.appendChild(title);
 
   const addTaskBtn = document.createElement('button');
   addTaskBtn.className = 'primary-btn';
   addTaskBtn.textContent = '+ Add Task';
-  addTaskBtn.style.marginLeft = '20px';
   addTaskBtn.addEventListener('click', openTaskPopup);
-  right.appendChild(addTaskBtn);
+  main.appendChild(addTaskBtn);
 
-  const openTasks = tasks.filter(task => !task.is_finished);
-  const finishedTasks = tasks.filter(task => task.is_finished);
+  const openTasks = tasks.filter(t => !t.is_finished);
+  const finishedTasks = tasks.filter(t => t.is_finished);
 
-  renderTaskList('Open Tasks', openTasks, false, right);
-  if (finishedTasks.length > 0) renderTaskList('Finished Tasks', finishedTasks, true, right);
-}
+  const openTitle = document.createElement('h3');
+  openTitle.textContent = 'Open Tasks';
+  main.appendChild(openTitle);
 
-function renderTaskList(titleText, tasks, finished, container) {
-  const title = document.createElement('h3');
-  title.textContent = titleText;
-  title.style.marginTop = '30px';
-  container.appendChild(title);
+  const openGrid = document.createElement('div');
+  openGrid.className = 'tasks-grid';
+  main.appendChild(openGrid);
 
-  const grid = document.createElement('div');
-  grid.className = 'tasks-grid';
-  container.appendChild(grid);
-
-  tasks.forEach(task => {
-    const taskDiv = document.createElement('div');
-    taskDiv.className = 'task';
-    taskDiv.innerHTML = `
+  openTasks.forEach(task => {
+    const div = document.createElement('div');
+    div.className = 'task';
+    div.innerHTML = `
       <strong>${task.task_name}</strong><br>
       Due: ${task.due_date}<br>
-      Status: ${finished ? '✅ Finished' : '❌ Not Finished'}
-      ${!finished ? `
-        <br>
-        <button class="small-btn finish-task">Finish</button>
-        <button class="small-btn edit-task">Edit</button>
-      ` : ''}
+      Status: ❌
+      <br>
+      <button class="finish-btn">Finish</button>
+      <button class="edit-btn">Edit</button>
     `;
+    div.querySelector('.finish-btn').addEventListener('click', () => finishTask(task.id));
+    div.querySelector('.edit-btn').addEventListener('click', () => editTask(task.id, task.task_name, task.due_date));
+    openGrid.appendChild(div);
+  });
 
-    if (!finished) {
-      taskDiv.querySelector('.finish-task').addEventListener('click', (e) => {
-        e.stopPropagation();
-        finishTask(task.id);
-      });
-      taskDiv.querySelector('.edit-task').addEventListener('click', (e) => {
-        e.stopPropagation();
-        editTask(task.id, task.task_name, task.due_date);
-      });
+  if (finishedTasks.length > 0) {
+    const finishedTitle = document.createElement('h3');
+    finishedTitle.textContent = 'Finished Tasks';
+    main.appendChild(finishedTitle);
+
+    const finishedGrid = document.createElement('div');
+    finishedGrid.className = 'tasks-grid';
+    main.appendChild(finishedGrid);
+
+    finishedTasks.forEach(task => {
+      const div = document.createElement('div');
+      div.className = 'task';
+      div.innerHTML = `
+        <strong>${task.task_name}</strong><br>
+        Due: ${task.due_date}<br>
+        Status: ✅
+      `;
+      finishedGrid.appendChild(div);
+    });
+  }
+}
+
+// --- MODALS ---
+function openInputModal(title, placeholder, onSubmit) {
+  const modal = document.createElement('div');
+  modal.className = 'custom-modal';
+  modal.innerHTML = `
+    <div class="custom-modal-content">
+      <h2>${title}</h2>
+      <input type="text" id="modalInput" placeholder="${placeholder}" autofocus />
+      <div class="modal-buttons">
+        <button id="saveBtn">Save</button>
+        <button id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const value = document.getElementById('modalInput').value.trim();
+    if (value) {
+      onSubmit(value);
+      document.body.removeChild(modal);
     }
-
-    grid.appendChild(taskDiv);
+  });
+  document.getElementById('cancelBtn').addEventListener('click', () => {
+    document.body.removeChild(modal);
   });
 }
 
-function openTaskPopup() {
-  openTaskModal((name, dueDate) => {
-    createTask(name, dueDate);
+function openTaskModal(onSubmit) {
+  const modal = document.createElement('div');
+  modal.className = 'custom-modal';
+  modal.innerHTML = `
+    <div class="custom-modal-content">
+      <h2>New Task</h2>
+      <input type="text" id="taskNameInput" placeholder="Task name..." autofocus/>
+      <input type="date" id="dueDateInput" />
+      <div class="modal-buttons">
+        <button id="saveBtn">Save</button>
+        <button id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const name = document.getElementById('taskNameInput').value.trim();
+    const dueDate = document.getElementById('dueDateInput').value;
+    if (name && dueDate) {
+      onSubmit(name, dueDate);
+      document.body.removeChild(modal);
+    }
+  });
+  document.getElementById('cancelBtn').addEventListener('click', () => {
+    document.body.removeChild(modal);
   });
 }
 
-// --- Modals ---
-function openInputModal(title, placeholder, onSubmit) { /*...*/ }
-function openTaskModal(onSubmit) { /*...*/ }
-function openEditTaskModal(oldName, oldDueDate, onSubmit) { /*...*/ }
+function openEditTaskModal(oldName, oldDueDate, onSubmit) {
+  openTaskModal((name, dueDate) => onSubmit(name, dueDate));
+  document.getElementById('taskNameInput').value = oldName;
+  document.getElementById('dueDateInput').value = oldDueDate;
+}
 
-// --- Tasks API ---
-async function createTask(name, dueDate) { /*...*/ }
-async function finishTask(id) { /*...*/ }
-async function editTask(id, oldName, oldDueDate) { /*...*/ }
+function openEditProjectModal(oldName, onSubmit) {
+  openInputModal('Edit Project', 'Project Name...', (name) => onSubmit(name));
+  document.getElementById('modalInput').value = oldName;
+}
 
-// --- Sparkles ---
-window.startSparkles = function() { /* sparkle code */ }
+// --- SPARKLES ---
+window.startSparkles = function () {
+  const canvas = document.getElementById('sparkleCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
 
-// --- Start App ---
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = Math.random() * 2 + 1;
+      this.speedX = (Math.random() - 0.5) * 0.3;
+      this.speedY = (Math.random() - 0.5) * 0.3;
+      this.opacity = Math.random();
+    }
+    update() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(168, 85, 247, ${this.opacity})`;
+      ctx.fill();
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+
+  function initParticles() {
+    particles = [];
+    for (let i = 0; i < 120; i++) {
+      particles.push(new Particle());
+    }
+  }
+
+  initParticles();
+  animate();
+};
+
+// --- INIT ---
 handleRedirect();
 startSparkles();
