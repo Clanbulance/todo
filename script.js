@@ -1,4 +1,4 @@
-console.log("ver6.3")
+console.log("ver6.4")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -332,6 +332,36 @@ function openProjectPopup() {
     }
   });
 }
+
+function openInputModal(title, placeholder, onSubmit) {
+  const modal = document.createElement('div');
+  modal.className = 'custom-modal';
+  modal.innerHTML = `
+    <div class="custom-modal-content">
+      <h2>${title}</h2>
+      <input type="text" id="newProjectNameInput" placeholder="${placeholder}" autofocus />
+      <div class="modal-buttons">
+        <button id="saveInputBtn">Save</button>
+        <button id="cancelInputBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('saveInputBtn').addEventListener('click', () => {
+    const input = document.getElementById('newProjectNameInput').value.trim();
+    if (input) {
+      onSubmit(input);
+      document.body.removeChild(modal);
+    }
+  });
+
+  document.getElementById('cancelInputBtn').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+}
+
 
 
 // --- SPARKLES ---
