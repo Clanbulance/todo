@@ -1,230 +1,324 @@
+/* Reset */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-  }
-  
-  html, body {
-    height: 100%;
-    background-color: #1e272e;
-    color: #f5f6fa;
-  }
-  
-  /* Auth Page */
-  #authPage {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    text-align: center;
-  }
-  
-  #authPage h1 {
-    font-size: 2.5rem;
-    margin-bottom: 30px;
-  }
-  
-  #authPage button {
-    background-color: #00a8ff;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    color: white;
-    margin: 10px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-  }
-  
-  #authPage button:hover {
-    background-color: #0097e6;
-    transform: scale(1.05);
-  }
-  
-  /* Main App */
-  #mainApp {
-    display: grid;
-    grid-template-columns: 25% 75%;
-    height: 100vh;
-  }
-  
-  /* Sidebar (Projects) */
-  .left {
-    background-color: #2f3640;
-    padding: 20px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  #AddButton {
-    background-color: #718093;
-    color: white;
-    font-size: 2rem;
-    padding: 20px;
-    margin: 20px 0;
-    text-align: center;
-    border-radius: 16px;
-    width: 100%;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  #AddButton:hover {
-    background-color: #57606f;
-  }
-  
-  .project {
-    background-color: #353b48;
-    margin: 10px 0;
-    padding: 20px;
-    border-radius: 16px;
-    width: 100%;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    position: relative;
-  }
-  
-  .project:hover {
-    background-color: #40739e;
-    transform: translateY(-5px);
-  }
-  
-  .deleteProjectBtn {
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: #ff4757;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
-  
-  .deleteProjectBtn:hover {
-    transform: scale(1.2);
-  }
-  
-  /* Main Content (Tasks) */
-  .right {
-    background-color: #1e272e;
-    padding: 40px;
-    overflow-y: auto;
-  }
-  
-  .right h2 {
-    margin-bottom: 20px;
-    font-size: 2rem;
-    text-align: center;
-  }
-  
-  /* Add Task button */
-  .right button {
-    background-color: #00a8ff;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    color: white;
-    margin-bottom: 20px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-  }
-  
-  .right button:hover {
-    background-color: #0097e6;
-    transform: scale(1.05);
-  }
-  
-  /* Task Cards */
-  .task {
-    background-color: #353b48;
-    margin: 15px 0;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    transition: transform 0.2s ease;
-  }
-  
-  .task:hover {
-    transform: translateY(-5px);
-  }
-  
-  .task strong {
-    font-size: 1.2rem;
-    display: block;
-    margin-bottom: 8px;
-  }
-  
-  /* Popup Styling */
-  #popup {
-    background-color: #2f3640;
-    color: white;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    animation: fadeIn 0.3s ease;
-  }
-  
-  .popupInput {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: 1px solid #718093;
-    background-color: #353b48;
-    color: white;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, -45%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
-  }
-  
-  @keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-
-  #googleLoginButton {
-    background-color: white;
-    color: #2f3640;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    display: inline-block;
-  }
-  
-  #googleLoginButton:hover {
-    background-color: #f1f2f6;
-    transform: scale(1.05);
-  }
-  
-  #profilePicture:hover {
-    transform: scale(1.1);
-    transition: transform 0.2s ease;
-  }
-  
-  .google-login-btn {
-    background-color: #4285F4;
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    font-size: 1.1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 20px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.google-login-btn:hover {
-    background-color: #357AE8;
+/* Body */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #121212;
+  color: #e4e4e7;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Sparkle Canvas Background */
+#sparkleCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Auth Page */
+#authPage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #2a003f, #121212);
+  animation: fadeIn 1s ease forwards;
+}
+
+.auth-container {
+  background: rgba(30, 30, 30, 0.75);
+  backdrop-filter: blur(12px);
+  padding: 60px;
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+  text-align: center;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+}
+
+.auth-container:hover {
+  transform: scale(1);
+  box-shadow: 0 0 50px rgba(168, 85, 247, 0.8);
+}
+
+.auth-container h1 {
+  margin-bottom: 25px;
+  font-size: 2.8rem;
+  background: linear-gradient(90deg, #a855f7, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Buttons */
+.primary-btn {
+  background: #a855f7;
+  color: white;
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px #a855f7aa;
+}
+
+.primary-btn:hover {
+  background: #9333ea;
+  box-shadow: 0 0 20px #a855f7;
+}
+
+/* Spinner */
+#spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  display: none;
+}
+
+.spinner-icon {
+  border: 8px solid #1f1f1f;
+  border-top: 8px solid #a855f7;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Main App Layout */
+#mainApp {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  width: 100vw;
+  height: 100vh;
+  
+}
+
+/* Sidebar */
+.sidebar {
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(12px);
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  overflow-y: auto;
+  box-shadow: 4px 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.sidebar img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #a855f7;
+  transition: transform 0.3s ease;
+}
+
+.sidebar img:hover {
+  transform: scale(1.1);
+}
+
+.sidebar .username {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  color: #e4e4e7;
+}
+
+.sidebar .add-project-btn {
+  background: #a855f7;
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 0 10px #a855f7aa;
+  transition: all 0.3s ease;
+}
+
+.sidebar .add-project-btn:hover {
+  background: #9333ea;
+  box-shadow: 0 0 20px #a855f7;
+}
+
+/* Main Panel */
+.main {
+  background: #121212;
+  padding: 40px;
+  overflow-y: auto;
+
+}
+
+.main h2 {
+  font-size: 2.4rem;
+  margin-bottom: 30px;
+  color: #e4e4e7;
+  border-bottom: 2px solid #a855f7;
+  display: inline-block;
+  padding-bottom: 8px;
+  justify-self: center;
+}
+
+/* Tasks Grid Layout */
+.tasks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Tasks (Cards) */
+.task {
+  background: rgba(36, 36, 36, 0.95);
+  padding: 30px;
+  border-radius: 12px;
+  width: 300px;
+  min-height: 180px;
+  box-shadow: 0 5px 25px rgba(168, 85, 247, 0.25);
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  color: #e4e4e7;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.task:hover {
+  transform: translateY(-6px) scale(1.02);
+  background: rgba(50, 50, 50, 0.98);
+  box-shadow: 0 8px 30px rgba(168, 85, 247, 0.5);
+}
+
+.task button {
+  margin-top: 20px;
+  background: #10b981;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  align-self: center;
+  transition: background-color 0.3s ease;
+}
+
+.task button:hover {
+  background: #059669;
+}
+
+/* Small Buttons (Project Edit/Delete) */
+.small-btn {
+  background: #9333ea;
+  border: none;
+  color: white;
+  margin: 5px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.small-btn:hover {
+  background: #7e22ce;
+}
+
+/* Projects (Sidebar Projects) */
+.project {
+  background: rgba(36, 36, 36, 0.85);
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  position: relative;
+}
+
+.project:hover {
+  transform: translateY(-5px) scale(1.02);
+  background: rgba(45, 45, 45, 0.95);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.6);
+}
+
+/* Active Project Highlight */
+.project.active {
+  border: 2px solid #a855f7;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
+}
+
+.project.active::after {
+  content: "Active";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #a855f7;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: white;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive for Mobile */
+@media (max-width: 768px) {
+  #mainApp {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .main {
+    padding: 25px;
+  }
+}
+
+.task-count {
+  background: #a855f7;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  margin-left: 8px;
 }

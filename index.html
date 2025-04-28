@@ -3,29 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Project Manager Dark</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
+  <title>My Project Manager</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script type="module" src="script.js" defer></script>
 </head>
 <body>
+
+  <!-- Sparkle Canvas -->
+  <canvas id="sparkleCanvas"></canvas>
+
+  <!-- Authentication Page -->
   <div id="authPage">
-      <h1>Login to continue</h1>
-      <button id="googleLoginButton" class="google-login-btn">Login with Google</button>
+    <div class="auth-container">
+      <h1>Welcome</h1>
+      <button id="googleLoginButton" class="primary-btn">Login with Google</button>
+    </div>
   </div>
 
+  <!-- Main Application -->
   <div id="mainApp" style="display: none;">
-      <div class="left"></div>
-      <div class="right"></div>
+    <div class="sidebar"></div>
+    <div class="main"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script type="module" src="script.js" defer></script>
-</body>
+  <!-- Loading Spinner -->
+  <div id="spinner">
+    <div class="spinner-icon"></div>
+  </div>
 
+</body>
 </html>
