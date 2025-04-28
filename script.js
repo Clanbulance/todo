@@ -1,4 +1,4 @@
-console.log("ver6.4")
+console.log("ver6.5")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -6,12 +6,11 @@ const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your U
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-
 let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
-// --- AUTH ---
+// AUTH
 async function handleRedirect() {
   if (window.location.hash.includes('access_token')) {
     const params = new URLSearchParams(window.location.hash.substring(1));
@@ -55,14 +54,13 @@ async function logoutUser() {
 
 document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
 
-// --- APP START ---
 function startApp() {
   document.getElementById('authPage').style.display = 'none';
   document.getElementById('mainApp').style.display = 'grid';
   loadProjects();
 }
 
-// --- PROJECTS API ---
+// PROJECTS
 async function createProject(name) {
   const { error } = await supabase.from('projects').insert([{ name, user_id: currentUser.id }]);
   if (error) {
@@ -74,7 +72,7 @@ async function createProject(name) {
 }
 
 async function editProject(id, oldName) {
-  openEditProjectModal(oldName, async (newName) => {
+  openInputModal('Edit Project', oldName, async (newName) => {
     const { error } = await supabase.from('projects').update({ name: newName }).eq('id', id);
     if (error) {
       console.error('Edit Project Error:', error.message);
@@ -93,7 +91,7 @@ async function deleteProject(id) {
   }
 }
 
-// --- TASKS API ---
+// TASKS
 async function createTask(name, dueDate) {
   await supabase.from('tasks').insert([{ task_name: name, due_date: dueDate, is_finished: false, project_id: selectedProject.id }]);
   loadTasksForProject(selectedProject.id);
@@ -105,13 +103,13 @@ async function finishTask(id) {
 }
 
 async function editTask(id, oldName, oldDueDate) {
-  openEditTaskModal(oldName, oldDueDate, async (newName, newDueDate) => {
+  openTaskModal(oldName, oldDueDate, async (newName, newDueDate) => {
     await supabase.from('tasks').update({ task_name: newName, due_date: newDueDate }).eq('id', id);
     loadTasksForProject(selectedProject.id);
   });
 }
 
-// --- RENDERING ---
+// RENDER
 async function loadProjects() {
   const { data, error } = await supabase.from('projects').select('*').eq('user_id', currentUser.id);
   if (error) {
@@ -150,10 +148,7 @@ async function renderProjects() {
   projects.forEach(project => {
     const div = document.createElement('div');
     div.className = 'project';
-    if (selectedProject && selectedProject.id === project.id) {
-      div.classList.add('active');
-    }
-
+    if (selectedProject && selectedProject.id === project.id) div.classList.add('active');
     div.innerHTML = `
       ${project.name}
       <span class="task-count">${openTasksCount[project.id] || 0}</span>
@@ -162,7 +157,6 @@ async function renderProjects() {
         <button class="delete-btn">🗑️</button>
       </div>
     `;
-
     div.addEventListener('click', (e) => {
       if (e.target.classList.contains('edit-btn')) {
         e.stopPropagation();
@@ -175,7 +169,6 @@ async function renderProjects() {
         loadTasksForProject(project.id);
       }
     });
-
     sidebar.appendChild(div);
   });
 
@@ -227,8 +220,7 @@ function renderTasks(tasks) {
     div.innerHTML = `
       <strong>${task.task_name}</strong><br>
       Due: ${task.due_date}<br>
-      Status: ❌
-      <br>
+      Status: ❌<br>
       <button class="finish-btn">Finish</button>
       <button class="edit-btn">Edit</button>
     `;
@@ -259,112 +251,82 @@ function renderTasks(tasks) {
   }
 }
 
-// --- MODALS ---
-function openEditProjectModal(oldName, onSubmit) {
+// MODALS (Fixed)
+function openInputModal(title, defaultValue, onSubmit) {
   const modal = document.createElement('div');
   modal.className = 'custom-modal';
   modal.innerHTML = `
     <div class="custom-modal-content">
-      <h2>Edit Project</h2>
-      <input type="text" id="editProjectNameInput" placeholder="Project name..." value="${oldName}" />
+      <h2>${title}</h2>
+      <input type="text" placeholder="Type here..." value="${defaultValue || ''}" autofocus />
       <div class="modal-buttons">
-        <button id="saveEditBtn">Save Changes</button>
-        <button id="cancelEditBtn">Cancel</button>
+        <button class="save-btn">Save</button>
+        <button class="cancel-btn">Cancel</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
-  document.getElementById('saveEditBtn').addEventListener('click', () => {
-    const input = document.getElementById('editProjectNameInput').value.trim();
+  modal.querySelector('.save-btn').addEventListener('click', () => {
+    const input = modal.querySelector('input').value.trim();
     if (input) {
       onSubmit(input);
       document.body.removeChild(modal);
     }
   });
 
-  document.getElementById('cancelEditBtn').addEventListener('click', () => {
+  modal.querySelector('.cancel-btn').addEventListener('click', () => {
     document.body.removeChild(modal);
   });
 }
 
-
-function openTaskModal(onSubmit) {
+function openTaskModal(oldName, oldDueDate, onSubmit) {
   const modal = document.createElement('div');
   modal.className = 'custom-modal';
   modal.innerHTML = `
     <div class="custom-modal-content">
-      <h2>New Task</h2>
-      <input type="text" id="taskNameInput" placeholder="Task name..." autofocus/>
-      <input type="date" id="dueDateInput" />
+      <h2>Edit Task</h2>
+      <input type="text" placeholder="Task name..." value="${oldName || ''}" autofocus />
+      <input type="date" value="${oldDueDate || ''}" />
       <div class="modal-buttons">
-        <button id="saveBtn">Save</button>
-        <button id="cancelBtn">Cancel</button>
+        <button class="save-btn">Save</button>
+        <button class="cancel-btn">Cancel</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
-  document.getElementById('saveBtn').addEventListener('click', () => {
-    const name = document.getElementById('taskNameInput').value.trim();
-    const dueDate = document.getElementById('dueDateInput').value;
+  modal.querySelector('.save-btn').addEventListener('click', () => {
+    const name = modal.querySelectorAll('input')[0].value.trim();
+    const dueDate = modal.querySelectorAll('input')[1].value;
     if (name && dueDate) {
       onSubmit(name, dueDate);
       document.body.removeChild(modal);
     }
   });
-  document.getElementById('cancelBtn').addEventListener('click', () => {
+
+  modal.querySelector('.cancel-btn').addEventListener('click', () => {
     document.body.removeChild(modal);
   });
 }
 
-function openEditTaskModal(oldName, oldDueDate, onSubmit) {
-  openTaskModal((name, dueDate) => onSubmit(name, dueDate));
-  document.getElementById('taskNameInput').value = oldName;
-  document.getElementById('dueDateInput').value = oldDueDate;
-}
-
-
 function openProjectPopup() {
-  openInputModal('New Project', 'Enter Project Name...', async (projectName) => {
+  openInputModal('New Project', '', async (projectName) => {
     if (projectName) {
       await createProject(projectName);
     }
   });
 }
 
-function openInputModal(title, placeholder, onSubmit) {
-  const modal = document.createElement('div');
-  modal.className = 'custom-modal';
-  modal.innerHTML = `
-    <div class="custom-modal-content">
-      <h2>${title}</h2>
-      <input type="text" id="newProjectNameInput" placeholder="${placeholder}" autofocus />
-      <div class="modal-buttons">
-        <button id="saveInputBtn">Save</button>
-        <button id="cancelInputBtn">Cancel</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById('saveInputBtn').addEventListener('click', () => {
-    const input = document.getElementById('newProjectNameInput').value.trim();
-    if (input) {
-      onSubmit(input);
-      document.body.removeChild(modal);
+function openTaskPopup() {
+  openTaskModal('', '', async (taskName, dueDate) => {
+    if (taskName && dueDate) {
+      await createTask(taskName, dueDate);
     }
-  });
-
-  document.getElementById('cancelInputBtn').addEventListener('click', () => {
-    document.body.removeChild(modal);
   });
 }
 
-
-
-// --- SPARKLES ---
+// SPARKLES
 window.startSparkles = function () {
   const canvas = document.getElementById('sparkleCanvas');
   const ctx = canvas.getContext('2d');
@@ -418,6 +380,6 @@ window.startSparkles = function () {
   animate();
 };
 
-// --- INIT ---
+// INIT
 handleRedirect();
 startSparkles();
