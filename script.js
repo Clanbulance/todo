@@ -1,3 +1,5 @@
+console.log("ver1")
+
 // --- Clean URL if redirected from Supabase OAuth ---
 if (window.location.hash.includes('access_token')) {
   const params = new URLSearchParams(window.location.hash.substring(1));
