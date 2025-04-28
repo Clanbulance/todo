@@ -1,4 +1,4 @@
-console.log("ver4.1")
+console.log("ver4.2")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -170,9 +170,11 @@ async function renderProjects() {
 
 // --- Open Project Popup ---
 function openProjectPopup() {
-  const name = prompt('Enter Project Name:');
-  if (name) createProject(name);
+  openInputModal('New Project', 'Enter Project Name...', (name) => {
+    createProject(name);
+  });
 }
+
 
 async function createProject(name) {
   await supabase.from('projects').insert([{ name, user_id: currentUser.id }]);
@@ -280,10 +282,93 @@ function renderTasks(tasks) {
 
 // --- Open Task Popup ---
 function openTaskPopup() {
-  const name = prompt('Enter Task Name:');
-  const dueDate = prompt('Enter Due Date (YYYY-MM-DD):');
-  if (name && dueDate) createTask(name, dueDate);
+  openTaskModal((name, dueDate) => {
+    createTask(name, dueDate);
+  });
 }
+
+function openTaskModal(onSubmit) {
+  // Create modal container
+  const modal = document.createElement('div');
+  modal.className = 'custom-modal';
+
+  // Create modal content
+  modal.innerHTML = `
+    <div class="custom-modal-content">
+      <h2>New Task</h2>
+      <input type="text" id="taskNameInput" placeholder="Task name..." />
+      <input type="date" id="dueDateInput" />
+      <div class="modal-buttons">
+        <button id="modalSaveButton">Save</button>
+        <button id="modalCancelButton">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Show modal with slight animation
+  setTimeout(() => {
+    modal.classList.add('show');
+  }, 10);
+
+  // Button handlers
+  document.getElementById('modalSaveButton').addEventListener('click', () => {
+    const taskName = document.getElementById('taskNameInput').value.trim();
+    const dueDate = document.getElementById('dueDateInput').value;
+
+    if (taskName && dueDate) {
+      onSubmit(taskName, dueDate);
+      document.body.removeChild(modal);
+    } else {
+      alert('Please fill in both fields.');
+    }
+  });
+
+  document.getElementById('modalCancelButton').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+}
+
+// --- Helper to open a simple modal (for Project Name input) ---
+function openInputModal(title, placeholder, onSubmit) {
+  // Create modal container
+  const modal = document.createElement('div');
+  modal.className = 'custom-modal';
+
+  // Create modal content
+  modal.innerHTML = `
+    <div class="custom-modal-content">
+      <h2>${title}</h2>
+      <input type="text" id="modalInput" placeholder="${placeholder}" />
+      <div class="modal-buttons">
+        <button id="modalSaveButton">Save</button>
+        <button id="modalCancelButton">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Show modal animation
+  setTimeout(() => {
+    modal.classList.add('show');
+  }, 10);
+
+  // Button handlers
+  document.getElementById('modalSaveButton').addEventListener('click', () => {
+    const input = document.getElementById('modalInput').value.trim();
+    if (input) {
+      onSubmit(input);
+      document.body.removeChild(modal);
+    }
+  });
+
+  document.getElementById('modalCancelButton').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+}
+
 
 async function createTask(name, dueDate) {
   await supabase.from('tasks').insert([{ 
