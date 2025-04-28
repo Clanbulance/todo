@@ -38,21 +38,30 @@ async function checkSession() {
 document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
 
 async function loginWithGoogle() {
+  console.log('Logging in with Google...');
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://clanbulance.github.io/todo' // Important for GitHub Pages
+      redirectTo: 'https://clanbulance.github.io/todo' // Log this redirect URL
     }
   });
-  if (error) console.error('Google Login Error:', error.message);
+
+  if (error) {
+    console.error('Google Login Error:', error.message);
+  } else {
+    console.log('Login request sent successfully');
+  }
 }
+
 
 // --- Start Application ---
 function startApp() {
+  console.log('Starting the app for user:', currentUser); // Log user info when starting the app
   document.getElementById('authPage').style.display = 'none';
   document.getElementById('mainApp').style.display = 'grid';
-  loadProjects();
+  loadProjects(); // This will load your projects once the app starts
 }
+
 
 // --- Load Projects ---
 async function loadProjects() {
