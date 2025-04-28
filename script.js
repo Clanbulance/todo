@@ -1,4 +1,4 @@
-console.log("ver4.2")
+console.log("ver5")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -380,24 +380,37 @@ async function createTask(name, dueDate) {
   loadTasksForProject(selectedProject.id);
 }
 
-// --- Edit Task ---
-async function editTask(id, oldName, oldDueDate) {
-  const newName = prompt('Edit Task Name:', oldName);
-  const newDueDate = prompt('Edit Due Date (YYYY-MM-DD):', oldDueDate);
-  if (newName && newDueDate) {
-    await supabase.from('tasks').update({ 
-      task_name: newName, 
-      due_date: newDueDate 
-    }).eq('id', id);
+window.finishTask = async function(id) {
+  const { error } = await supabase.from('tasks').update({ is_finished: true }).eq('id', id);
+  if (error) {
+    console.error('Error finishing task:', error.message);
+    alert('Failed to finish task!');
+  } else {
+    console.log('Task finished!');
     loadTasksForProject(selectedProject.id);
   }
-}
+};
 
-// --- Finish Task ---
-async function finishTask(id) {
-  await supabase.from('tasks').update({ is_finished: true }).eq('id', id);
-  loadTasksForProject(selectedProject.id);
-}
+window.editTask = async function(id, oldName, oldDueDate) {
+  openEditTaskModal(oldName, oldDueDate, async (newName, newDueDate) => {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ 
+        task_name: newName, 
+        due_date: newDueDate 
+      })
+      .eq('id', id);
+      
+    if (error) {
+      console.error('Error editing task:', error.message);
+      alert('Failed to edit task!');
+    } else {
+      console.log('Task updated!');
+      loadTasksForProject(selectedProject.id);
+    }
+  });
+};
+
 
 // --- Logout User ---
 async function logoutUser() {
