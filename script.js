@@ -1,4 +1,4 @@
-console.log("ver2")
+console.log("ver3")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -27,8 +27,21 @@ if (window.location.hash.includes('access_token')) {
 
   // Clean the URL by removing the access_token fragment
   window.history.replaceState({}, document.title, window.location.pathname);
+  checkSession(); 
 }
 
+async function checkSession() {
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    console.log('No session, staying on login page');
+    return;
+  }
+
+  console.log('Session found, starting app...');
+  currentUser = data.user;
+  startApp();
+}
 
 
 
@@ -348,3 +361,4 @@ window.startSparkles = function() {
 };
 
 startSparkles();
+checkSession();
