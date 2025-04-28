@@ -3,14 +3,37 @@
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-
-// === App State ===
 let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
-// === Popup System ===
+// ===================
+// 2. Check Session on Page Load
+// ===================
+
+async function checkSession() {
+  const { data, error } = await supabase.auth.getSession();
+
+  if (data.session) {
+    console.log('SESSION FOUND:', data.session); // ✅ debug line
+
+    currentUser = data.session.user;  // 👈 safe way
+    console.log('CURRENT USER:', currentUser); // ✅ debug line
+
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'grid';
+    loadProjects();
+  } else {
+    console.log('No active session');
+  }
+}
+
+checkSession();
+
+// ===================
+// 3. Popup Helpers
+// ===================
+
 function createOverlay() {
   const overlay = document.createElement('div');
   overlay.id = 'overlay';
@@ -22,7 +45,6 @@ function createOverlay() {
   overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
   overlay.style.backdropFilter = 'blur(5px)';
   overlay.style.zIndex = '1000';
-  overlay.style.animation = 'fadeInOverlay 0.3s ease';
   overlay.addEventListener('click', closePopup);
   document.body.appendChild(overlay);
 }
@@ -57,7 +79,10 @@ function showMessage(messageText) {
   document.getElementById('popupOk').addEventListener('click', closePopup);
 }
 
-// === Authentication ===
+// ===================
+// 4. Login and Register
+// ===================
+
 async function hashPassword(password) {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -66,55 +91,24 @@ async function hashPassword(password) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-document.getElementById('loginButton').addEventListener('click', () => {
-  openPopup(`
-    <h2>Login</h2>
-    <input type="text" id="popupUsername" class="popupInput" placeholder="Username (optional)">
-    <input type="password" id="popupPassword" class="popupInput" placeholder="Password (optional)">
-    <br>
-    <button id="popupLoginConfirm">Login</button>
-    <button id="popupGoogleLogin">Login with Google</button>
-    <button id="popupCancel">Cancel</button>
-  `);
-
-  document.getElementById('popupLoginConfirm').addEventListener('click', handleLogin);
-  document.getElementById('popupGoogleLogin').addEventListener('click', loginWithGoogle);
-  document.getElementById('popupCancel').addEventListener('click', closePopup);
-});
-
-async function loginWithGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google'
-  });
-  if (error) showMessage('Error logging in with Google.');
-}
-
-
-document.getElementById('registerButton').addEventListener('click', () => {
-  openPopup(`
-    <h2>Register</h2>
-    <input type="text" id="popupUsername" class="popupInput" placeholder="Username">
-    <input type="password" id="popupPassword" class="popupInput" placeholder="Password">
-    <br>
-    <button id="popupRegisterConfirm">Register</button>
-    <button id="popupCancel">Cancel</button>
-  `);
-
-  document.getElementById('popupRegisterConfirm').addEventListener('click', handleRegister);
-  document.getElementById('popupCancel').addEventListener('click', closePopup);
-});
+document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
 
 async function handleLogin() {
   const username = document.getElementById('popupUsername').value.trim().toLowerCase();
   const password = document.getElementById('popupPassword').value;
+
   if (!username || !password) return showMessage('Please fill all fields!');
-  
   const hashed = await hashPassword(password);
-  const { data, error } = await supabase.from('users').select('*').eq('username', username).single();
-  
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', username)
+    .single();
+
   if (error || !data) return showMessage('User not found!');
   if (data.password_hash !== hashed) return showMessage('Incorrect password!');
-  
+
   currentUser = data;
   closePopup();
   document.getElementById('authPage').style.display = 'none';
@@ -125,35 +119,56 @@ async function handleLogin() {
 async function handleRegister() {
   const username = document.getElementById('popupUsername').value.trim().toLowerCase();
   const password = document.getElementById('popupPassword').value;
+
   if (!username || !password) return showMessage('Please fill all fields!');
-  
   const hashed = await hashPassword(password);
-  const { error } = await supabase.from('users').insert([{ username, password_hash: hashed }]);
-  
+
+  const { error } = await supabase
+    .from('users')
+    .insert([{ username, password_hash: hashed }]);
+
   if (error) return showMessage('Registration failed!');
-  
   closePopup();
-  showMessage('Registered! You can now login.');
+  showMessage('Registered successfully! Please login.');
 }
 
-document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
+async function loginWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google'
+  });
+  if (error) showMessage('Error logging in with Google.');
+}
 
+// ===================
+// 5. Project Management
+// ===================
 
-
-// === Projects ===
 async function loadProjects() {
-  const { data, error } = await supabase.from('projects').select('*').eq('user_id', currentUser.id);
-  if (error) console.error(error);
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
   projects = data || [];
   renderProjects();
 }
 
 function renderProjects() {
+  if (!currentUser) {
+    console.error('Current user not found');
+    return;
+  }
+
   const left = document.querySelector('.left');
   left.innerHTML = '';
 
-  // ========== Add Profile Picture ==========
-
+  // Profile Picture
+  const user = currentUser;
   const profilePic = document.createElement('img');
   profilePic.id = 'profilePicture';
   profilePic.style.width = '80px';
@@ -163,20 +178,15 @@ function renderProjects() {
   profilePic.style.marginBottom = '20px';
   profilePic.style.border = '2px solid #00a8ff';
   profilePic.style.cursor = 'pointer';
-  
-  // Set profile pic src
-  const user = supabase.auth.user(); // get current user
-  
+
   if (user && user.user_metadata && user.user_metadata.avatar_url) {
     profilePic.src = user.user_metadata.avatar_url;
   } else {
-    profilePic.src = 'https://via.placeholder.com/80?text=User'; // fallback avatar
+    profilePic.src = 'https://via.placeholder.com/80?text=User';
   }
-
   left.appendChild(profilePic);
 
-  // ========== Add Logout Button ==========
-
+  // Logout Button
   const logoutBtn = document.createElement('button');
   logoutBtn.id = 'logoutButton';
   logoutBtn.textContent = 'Logout';
@@ -184,16 +194,14 @@ function renderProjects() {
   logoutBtn.addEventListener('click', logoutUser);
   left.appendChild(logoutBtn);
 
-  // ========== Add Add Project Button ==========
-
+  // Add Project Button
   const addProjectBtn = document.createElement('div');
   addProjectBtn.id = 'AddButton';
   addProjectBtn.textContent = '+';
   addProjectBtn.addEventListener('click', openProjectPopup);
   left.appendChild(addProjectBtn);
 
-  // ========== Render Projects ==========
-
+  // List Projects
   projects.forEach(project => {
     const div = document.createElement('div');
     div.className = 'project';
@@ -216,6 +224,12 @@ function renderProjects() {
   });
 }
 
+async function deleteProject(id) {
+  if (!confirm('Delete this project and all tasks?')) return;
+  await supabase.from('tasks').delete().eq('project_id', id);
+  await supabase.from('projects').delete().eq('id', id);
+  loadProjects();
+}
 
 function openProjectPopup() {
   openPopup(`
@@ -229,7 +243,7 @@ function openProjectPopup() {
   document.getElementById('popupCreateProject').addEventListener('click', async () => {
     const name = document.getElementById('popupProjectName').value.trim();
     if (!name) return showMessage('Project name required!');
-    await supabase.from('projects').insert([{ name, user_id: currentUser.id }]);
+    await supabase.from('projects').insert([{ name: name,user_id: currentUser.id }]);
     closePopup();
     loadProjects();
   });
@@ -237,14 +251,10 @@ function openProjectPopup() {
   document.getElementById('popupCancel').addEventListener('click', closePopup);
 }
 
-async function deleteProject(id) {
-  if (!confirm('Delete this project and all tasks?')) return;
-  await supabase.from('tasks').delete().eq('project_id', id);
-  await supabase.from('projects').delete().eq('id', id);
-  loadProjects();
-}
+// ===================
+// 6. Task Management
+// ===================
 
-// === Tasks ===
 async function loadTasksForProject(projectId) {
   const { data, error } = await supabase.from('tasks').select('*').eq('project_id', projectId);
   if (error) console.error(error);
@@ -279,7 +289,6 @@ function renderTasks(tasks) {
   });
 }
 
-// Important! Make finishTask global
 window.finishTask = async function(taskId) {
   const { error } = await supabase.from('tasks').update({ is_finished: true }).eq('id', taskId);
   if (error) return console.error(error);
@@ -306,9 +315,12 @@ function openTaskPopup() {
   });
 
   document.getElementById('popupCancel').addEventListener('click', closePopup);
-};
+}
 
-// === Logout ===
+// ===================
+// 7. Logout
+// ===================
+
 function logoutUser() {
   currentUser = null;
   projects = [];
@@ -316,4 +328,3 @@ function logoutUser() {
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('authPage').style.display = 'flex';
 }
-

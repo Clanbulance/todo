@@ -214,3 +214,17 @@
     transition: transform 0.2s ease;
   }
   
+  .google-login-btn {
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.google-login-btn:hover {
+    background-color: #357AE8;
+}
