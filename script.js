@@ -1,3 +1,10 @@
+// --- Clean URL if redirected from Supabase OAuth ---
+if (window.location.hash.includes('access_token')) {
+  const params = new URLSearchParams(window.location.hash.substring(1));
+  if (params.get('access_token')) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
 
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';   // 👈 Your URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574'; // 👈 Your anon key
@@ -8,28 +15,91 @@ let currentUser = null;
 let projects = [];
 let selectedProject = null;
 
+// Redirect to login page if no session found
+
 // --- Session Check ---
 checkSession();
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getSession();
-  if (data.session) {
+  console.log('Supabase session data:', data);
+  console.log('Supabase session error:', error);
+
+  // If there is a session, start the app
+  if (data?.session) {
     currentUser = data.session.user;
-    startApp();
+    console.log('User is logged in:', currentUser);
+    startApp();  // Start the app if the session is valid
+  } else {
+    console.log('No session found, checking current page...');
+    // If not logged in and we're not already on the login page, redirect to login
+    if (!window.location.href.includes('index.html')) {
+      redirectToLoginPage();
+    }
   }
 }
+
+// Function to redirect to login page only if the user is not already there
+function redirectToLoginPage() {
+  console.log('Redirecting to login page...');
+  // Only redirect if we're not already on the login page
+  if (window.location.pathname !== '/index.html') {
+    window.location.href = 'https://clanbulance.github.io/todo';  // Adjust the URL as needed
+  }
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', event);
+  console.log('Session data after login:', session);
+  
+  if (session) {
+    currentUser = session.user;
+    console.log('User is logged in:', currentUser);
+    startApp();
+  } else {
+    console.log('User is logged out');
+    redirectToLoginPage();
+  }
+});
+
+// Remove token from URL fragment after login
+if (window.location.hash.includes('access_token')) {
+  const params = new URLSearchParams(window.location.hash.substring(1));
+  const access_token = params.get('access_token');
+  
+  if (access_token) {
+    console.log('Access token received:', access_token);
+    // Optionally, store the access token if needed
+  }
+
+  // Clean the URL by removing the access_token fragment
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+
+
 
 // --- Login with Google ---
 document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
 
 async function loginWithGoogle() {
+  console.log('Starting Google login...');
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://clanbulance.github.io/todo' // Important for GitHub Pages
+      redirectTo: 'https://clanbulance.github.io/todo'
     }
   });
-  if (error) console.error('Google Login Error:', error.message);
+
+  if (error) {
+    console.error('Google Login Error:', error.message);
+  } else {
+    console.log('Login request sent successfully');
+  }
+
+  // Force session check after login request
+  checkSession();
 }
 
 // --- Start Application ---
