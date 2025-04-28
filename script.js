@@ -1,4 +1,4 @@
-console.log("ver6.2")
+console.log("ver6.3")
 
 // --- Clean URL if redirected from Supabase OAuth ---
 
@@ -324,10 +324,6 @@ function openEditTaskModal(oldName, oldDueDate, onSubmit) {
   document.getElementById('dueDateInput').value = oldDueDate;
 }
 
-function openEditProjectModal(oldName, onSubmit) {
-  openInputModal('Edit Project', 'Project Name...', (name) => onSubmit(name));
-  document.getElementById('projectNameInput').value = oldName;
-}
 
 function openProjectPopup() {
   openInputModal('New Project', 'Enter Project Name...', async (projectName) => {
