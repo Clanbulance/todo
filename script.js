@@ -69,16 +69,26 @@ async function hashPassword(password) {
 document.getElementById('loginButton').addEventListener('click', () => {
   openPopup(`
     <h2>Login</h2>
-    <input type="text" id="popupUsername" class="popupInput" placeholder="Username">
-    <input type="password" id="popupPassword" class="popupInput" placeholder="Password">
+    <input type="text" id="popupUsername" class="popupInput" placeholder="Username (optional)">
+    <input type="password" id="popupPassword" class="popupInput" placeholder="Password (optional)">
     <br>
     <button id="popupLoginConfirm">Login</button>
+    <button id="popupGoogleLogin">Login with Google</button>
     <button id="popupCancel">Cancel</button>
   `);
 
   document.getElementById('popupLoginConfirm').addEventListener('click', handleLogin);
+  document.getElementById('popupGoogleLogin').addEventListener('click', loginWithGoogle);
   document.getElementById('popupCancel').addEventListener('click', closePopup);
 });
+
+async function loginWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google'
+  });
+  if (error) showMessage('Error logging in with Google.');
+}
+
 
 document.getElementById('registerButton').addEventListener('click', () => {
   openPopup(`
@@ -126,6 +136,10 @@ async function handleRegister() {
   showMessage('Registered! You can now login.');
 }
 
+document.getElementById('googleLoginButton').addEventListener('click', loginWithGoogle);
+
+
+
 // === Projects ===
 async function loadProjects() {
   const { data, error } = await supabase.from('projects').select('*').eq('user_id', currentUser.id);
@@ -136,11 +150,49 @@ async function loadProjects() {
 
 function renderProjects() {
   const left = document.querySelector('.left');
-  left.innerHTML = `
-    <div id="AddButton">+</div>
-  `;
+  left.innerHTML = '';
 
-  document.getElementById('AddButton').addEventListener('click', openProjectPopup);
+  // ========== Add Profile Picture ==========
+
+  const profilePic = document.createElement('img');
+  profilePic.id = 'profilePicture';
+  profilePic.style.width = '80px';
+  profilePic.style.height = '80px';
+  profilePic.style.borderRadius = '50%';
+  profilePic.style.objectFit = 'cover';
+  profilePic.style.marginBottom = '20px';
+  profilePic.style.border = '2px solid #00a8ff';
+  profilePic.style.cursor = 'pointer';
+  
+  // Set profile pic src
+  const user = supabase.auth.user(); // get current user
+  
+  if (user && user.user_metadata && user.user_metadata.avatar_url) {
+    profilePic.src = user.user_metadata.avatar_url;
+  } else {
+    profilePic.src = 'https://via.placeholder.com/80?text=User'; // fallback avatar
+  }
+
+  left.appendChild(profilePic);
+
+  // ========== Add Logout Button ==========
+
+  const logoutBtn = document.createElement('button');
+  logoutBtn.id = 'logoutButton';
+  logoutBtn.textContent = 'Logout';
+  logoutBtn.className = 'logout-btn';
+  logoutBtn.addEventListener('click', logoutUser);
+  left.appendChild(logoutBtn);
+
+  // ========== Add Add Project Button ==========
+
+  const addProjectBtn = document.createElement('div');
+  addProjectBtn.id = 'AddButton';
+  addProjectBtn.textContent = '+';
+  addProjectBtn.addEventListener('click', openProjectPopup);
+  left.appendChild(addProjectBtn);
+
+  // ========== Render Projects ==========
 
   projects.forEach(project => {
     const div = document.createElement('div');
@@ -163,6 +215,7 @@ function renderProjects() {
     left.appendChild(div);
   });
 }
+
 
 function openProjectPopup() {
   openPopup(`
@@ -263,3 +316,4 @@ function logoutUser() {
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('authPage').style.display = 'flex';
 }
+
