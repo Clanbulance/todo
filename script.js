@@ -1,5 +1,5 @@
 
-console.log("ver6.6-fixed")
+console.log("ver6.8")
 
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';  // replace with your actual URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574y';                 // replace with your actual anon public API key
@@ -25,8 +25,13 @@ async function handleRedirect() {
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return console.log('No session');
+  console.log("Session check result:", data, error);
+  if (error || !data.user) {
+    console.log('No session, staying on login page');
+    return;
+  }
   currentUser = data.user;
+  console.log("Logged in user:", currentUser);
   startApp();
 }
 
