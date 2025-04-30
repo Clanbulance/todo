@@ -1,9 +1,10 @@
 
-console.log("ver6.8")
+console.log("ver6.9")
 
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';  // replace with your actual URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574y';                 // replace with your actual anon public API key
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+window.supabaseClient = supabase;
 
 let currentUser = null;
 let projects = [];
