@@ -1,5 +1,5 @@
 
-console.log("ver6.9")
+console.log("ver7")
 
 const supabaseUrl = 'https://kcijljeifwpemznezyam.supabase.co';  // replace with your actual URL
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjaWpsamVpZndwZW16bmV6eWFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDAxOTcsImV4cCI6MjA2MTI3NjE5N30.11fHMwRwZPtmQHVErEoJyROgim3eNy3XNL5DxPJd574y';                 // replace with your actual anon public API key
@@ -16,6 +16,8 @@ async function handleRedirect() {
     const access_token = params.get('access_token');
     const refresh_token = params.get('refresh_token');
 
+    console.log("OAuth redirect tokens:", access_token, refresh_token); // ✅ Add this line
+
     if (access_token && refresh_token) {
       await supabase.auth.setSession({ access_token, refresh_token });
     }
@@ -23,6 +25,8 @@ async function handleRedirect() {
   }
   checkSession();
 }
+
+console.log(window.location.origin, window.location.pathname)
 
 async function checkSession() {
   const { data, error } = await supabase.auth.getUser();
